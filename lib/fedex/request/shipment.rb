@@ -15,6 +15,8 @@ module Fedex
           :label_stock_type => 'PAPER_LETTER'
         }
         @label_specification.merge! options[:label_specification] if options[:label_specification]
+        @smartpost_detail = options[:smartpost_detail]
+        @return_label_service = options[:return_label_service]
       end
 
       # Sends post request to Fedex web service and parse the response.
@@ -44,10 +46,29 @@ module Fedex
           add_shipper(xml)
           add_recipient(xml)
           add_shipping_charges_payment(xml)
+          add_return_label_service(xml) if @return_label_service
           add_customs_clearance(xml) if @customs_clearance
+          add_smartpost_detail(xml) if @smartpost_detail
           add_custom_components(xml)
           xml.RateRequestTypes "ACCOUNT"
           add_packages(xml)
+        }
+      end
+
+      def add_return_label_service(xml)
+        xml.SpecialServicesRequested {
+          xml.SpecialServiceTypes "RETURN_SHIPMENT"
+          xml.ReturnShipmentDetail {
+            xml.ReturnType "PRINT_RETURN_LABEL"
+          }
+        }
+      end
+
+      def add_smartpost_detail(xml)
+        xml.SmartPostDetail {
+          xml.Indicia @smartpost_detail[:indicia]
+          xml.AncillaryEndorsement @smartpost_detail[:ancillary_endorsement]
+          xml.HubId @smartpost_detail[:hub_id]
         }
       end
 
